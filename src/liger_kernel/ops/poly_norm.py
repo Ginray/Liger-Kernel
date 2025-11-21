@@ -7,6 +7,7 @@ import triton.language as tl
 from liger_kernel.ops.utils import calculate_settings
 from liger_kernel.ops.utils import compare_version
 from liger_kernel.ops.utils import ensure_contiguous
+from liger_kernel.utils import get_multi_processor_count
 
 if compare_version("triton", operator.ge, "3.0.0"):
     try:
@@ -285,11 +286,7 @@ def poly_norm_backward(dY, X, W, RSTD, BLOCK_SIZE, num_warps, in_place):
     # Get number of SMs for parallelization
     import math
 
-    sm_count = 1
-    if X.device.type == "cuda":
-        sm_count = torch.cuda.get_device_properties(X.device).multi_processor_count
-    elif X.device.type == "xpu":
-        sm_count = torch.xpu.get_device_properties(X.device).gpu_eu_count
+    sm_count = get_multi_processor_count(X.device)
 
     # Allocate or reuse gradients
     if in_place is True:

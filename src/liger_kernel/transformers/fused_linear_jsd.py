@@ -1,6 +1,7 @@
 from typing import Optional
 
 import torch
+from liger_kernel.utils import get_torch_device
 
 from liger_kernel.ops.fused_linear_jsd import LigerFusedLinearJSDFunction
 
@@ -29,11 +30,11 @@ class LigerFusedLinearJSD(torch.nn.Module):
     >>> (B, T, H_s, H_t, V) = (2, 2, 3, 5, 10)
     >>> fused_jsd = LigerFusedLinearJSD(jsd_beta=0.1, temperature=2.0)
     >>> # generate inputs and weights
-    >>> student_input = torch.rand(B * T, H_s, device="cuda", requires_grad=True)
-    >>> student_lin = torch.nn.Linear(H_s, V, bias=False, device="cuda")
+    >>> student_input = torch.rand(B * T, H_s, device=get_torch_device("cuda"), requires_grad=True)
+    >>> student_lin = torch.nn.Linear(H_s, V, bias=False, device=get_torch_device("cuda"))
     >>> # teacher input doesn't require grad, hidden_dim can be different from student's
-    >>> teacher_input = torch.rand(B * T, H_t, device="cuda")
-    >>> teacher_lin = torch.nn.Linear(H_t, V, bias=False, device="cuda")
+    >>> teacher_input = torch.rand(B * T, H_t, device=get_torch_device("cuda"))
+    >>> teacher_lin = torch.nn.Linear(H_t, V, bias=False, device=get_torch_device("cuda"))
     >>> output = fused_jsd(student_input, student_lin.weight, teacher_input, teacher_lin.weight)
     >>> output.backward()
     >>>

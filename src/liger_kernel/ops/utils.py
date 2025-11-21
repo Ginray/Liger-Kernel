@@ -78,7 +78,25 @@ def get_amp_custom_fwd_bwd() -> Callable:
             functools.partial(torch.amp.custom_fwd, device_type=device),
             functools.partial(torch.amp.custom_bwd, device_type=device),
         )
-    return torch.cuda.amp.custom_fwd, torch.cuda.amp.custom_bwd
+    # For older torch versions, try to prefer NPU amp if available, then CUDA amp,
+    # and finally fall back to CPU-friendly no-op wrappers.
+    try:
+        # NPU amp (best-effort)
+        if hasattr(torch, "npu") and getattr(torch.npu, "amp", None) is not None:
+            return torch.npu.amp.custom_fwd, torch.npu.amp.custom_bwd
+    except Exception:
+        pass
+    try:
+        return torch.cuda.amp.custom_fwd, torch.cuda.amp.custom_bwd
+    except Exception:
+        # Fallback: create no-op wrappers to preserve API surface
+        def _noop_fwd(fn):
+            return fn
+
+        def _noop_bwd(fn):
+            return fn
+
+        return _noop_fwd, _noop_bwd
 
 
 amp_custom_fwd, amp_custom_bwd = get_amp_custom_fwd_bwd()

@@ -1,4 +1,5 @@
 import torch
+from liger_kernel.utils import get_torch_device
 import triton
 
 from utils import QUANTILES
@@ -40,8 +41,8 @@ def bench_speed_tvd(input: SingleBenchmarkRunInput) -> SingleBenchmarkRunOutput:
     torch_tvd = TorchTVDLoss(reduction=reduction)
     liger_tvd = LigerTVDLoss(reduction=reduction)
 
-    _input = torch.randn(B * T, V, requires_grad=True, device="cuda").softmax(dim=-1)
-    target = torch.randn(B * T, V, device="cuda").softmax(dim=-1)
+    _input = torch.randn(B * T, V, requires_grad=True, device=get_torch_device("cuda")).softmax(dim=-1)
+    target = torch.randn(B * T, V, device=get_torch_device("cuda")).softmax(dim=-1)
 
     def fwd():
         if input.kernel_provider == "liger":
@@ -82,8 +83,8 @@ def bench_memory_tvd(input: SingleBenchmarkRunInput) -> SingleBenchmarkRunOutput
     V = input.x
     B, T = input.extra_benchmark_config["B"], input.extra_benchmark_config["T"]
 
-    _input = torch.randn(B * T, V, requires_grad=True, device="cuda").softmax(dim=-1)
-    target = torch.randn(B * T, V, device="cuda").softmax(dim=-1)
+    _input = torch.randn(B * T, V, requires_grad=True, device=get_torch_device("cuda")).softmax(dim=-1)
+    target = torch.randn(B * T, V, device=get_torch_device("cuda")).softmax(dim=-1)
 
     def fwd():
         if input.kernel_provider == "liger":

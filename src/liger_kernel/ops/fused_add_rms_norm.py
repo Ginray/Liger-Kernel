@@ -288,11 +288,9 @@ def fused_add_rms_norm_backward(dY, dS_out, S, W, RSTD, offset, casting_mode, BL
     S = S.view(-1, dim)
     n_rows, n_cols = dY.shape
 
-    sm_count = 1
-    if S.device.type == "cuda":
-        sm_count = torch.cuda.get_device_properties(S.device).multi_processor_count
-    elif S.device.type == "xpu":
-        sm_count = torch.xpu.get_device_properties(S.device).gpu_eu_count
+    from liger_kernel.utils import get_multi_processor_count
+
+    sm_count = get_multi_processor_count(S.device)
 
     # fp32 for numerical stability especially.
     _dW = torch.empty((sm_count, n_cols), dtype=torch.float32, device=W.device)

@@ -45,16 +45,24 @@ def set_seed(seed=42):
 
     if device == "cuda":
         # If you are using CUDA
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
-
-        # PyTorch backend settings
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+        try:
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+        except Exception:
+            pass
     elif device == "xpu":
         # If you are using XPU
         torch.xpu.manual_seed(seed)
         torch.xpu.manual_seed_all(seed)
+    elif device == "npu":
+        # If you are using Ascend NPU
+        if hasattr(torch, "npu"):
+            if hasattr(torch.npu, "manual_seed"):
+                torch.npu.manual_seed(seed)
+            if hasattr(torch.npu, "manual_seed_all"):
+                torch.npu.manual_seed_all(seed)
 
     # Python hash seed
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -255,8 +263,14 @@ def train_bpe_tokenizer(special_tokens: List[str], unk_token: str = "<|unk|>"):
 
 def supports_bfloat16():
     if device == "cuda":
-        return torch.cuda.get_device_capability() >= (8, 0)  # Ampere and newer
+        try:
+            return torch.cuda.get_device_capability() >= (8, 0)  # Ampere and newer
+        except Exception:
+            return False
     elif device == "xpu":
+        return True
+    elif device == "npu":
+        # Ascend NPUs generally support bfloat16
         return True
     else:
         return False

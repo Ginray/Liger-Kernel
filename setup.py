@@ -24,6 +24,13 @@ def get_default_dependencies():
         return [
             "torch>=2.6.0",
         ]
+    elif platform == "ascend":
+        # Ascend/NPU typically requires a specialised torch build; keep the
+        # baseline torch requirement but users may need to adjust for their
+        # environment.
+        return [
+            "torch>=2.1.2",
+        ]
 
 
 def get_optional_dependencies():
@@ -67,7 +74,29 @@ def is_xpu_available():
     return False
 
 
-def get_platform() -> Literal["cuda", "rocm", "cpu", "xpu"]:
+def is_ascend_available() -> bool:
+    """Best-effort Ascend detection.
+
+    Checks for common Ascend environment variables and a possible `npu-smi`
+    utility if present. This is intentionally conservative.
+    """
+    import os
+    try:
+        if os.environ.get("ASCEND_DEVICE_ID") is not None:
+            return True
+        if os.environ.get("NPU_VISIBLE_DEVICES") is not None:
+            return True
+    except Exception:
+        pass
+    try:
+        subprocess.run(["npu-smi"], check=True)
+        return True
+    except (subprocess.SubprocessError, FileNotFoundError):
+        pass
+    return False
+
+
+def get_platform() -> Literal["cuda", "rocm", "cpu", "xpu", "ascend"]:
     """
     Detect whether the system has NVIDIA or AMD GPU without torch dependency.
     """
@@ -83,6 +112,11 @@ def get_platform() -> Literal["cuda", "rocm", "cpu", "xpu"]:
             print("ROCm GPU detected")
             return "rocm"
         except (subprocess.SubprocessError, FileNotFoundError):
+            # Check for Ascend/NPU
+            if is_ascend_available():
+                print("Ascend NPU detected")
+                return "ascend"
+
             if is_xpu_available():
                 print("Intel GPU detected")
                 return "xpu"
