@@ -9,9 +9,9 @@ import triton.language as tl
 from liger_kernel.ops.utils import compare_version
 from liger_kernel.ops.utils import element_mul_kernel
 from liger_kernel.ops.utils import is_hip
-from liger_kernel.utils import infer_device
+from liger_kernel.utils import infer_device, is_npu_available
 
-if compare_version("triton", operator.ge, "3.0.0"):
+if compare_version("triton", operator.ge, "3.0.0") and not is_npu_available():
     try:
         # typical import path with dispatch available
         from triton.language.extra.libdevice import tanh

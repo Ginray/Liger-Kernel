@@ -18,10 +18,32 @@ def infer_device():
     """
     if torch.cuda.is_available():  # Works for both Nvidia and AMD
         return "cuda"
+    # Use Ascend NPU if available (torch.npu)
+    elif is_npu_available():
+        return "npu"
+    # XPU (Intel) if available
     elif torch.xpu.is_available():
         return "xpu"
     else:
         return "cpu"
+
+
+def is_npu_available() -> bool:
+    """Detect Ascend NPU availability."""
+    try:
+        from transformers.utils import is_torch_npu_available
+        return is_torch_npu_available()
+    except Exception:
+        return False
+
+
+def get_npu_multi_processor_count() -> int:
+    """Return a heuristic multi-processor count for NPU. """
+    NPU_MULTI_PROCESSOR_COUNT = 48
+    if is_npu_available():
+        return NPU_MULTI_PROCESSOR_COUNT
+    # Reasonable default to avoid division by zero
+    return 1
 
 
 def transformers_version_dispatch(
